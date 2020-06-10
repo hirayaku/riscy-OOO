@@ -26,8 +26,13 @@
 
 # Points to root folder of repository
 export RISCY_HOME=$PWD
+
 # Points to toolchain
-export RISCY_TOOLS=$RISCY_HOME/tools/RV64G
+# export RISCY_TOOLS=$RISCY_HOME/tools/RV64G
 # Adding to path and ld library path
-export PATH=$RISCY_TOOLS/bin:$PATH
-export LD_LIBRARY_PATH=$RISCY_TOOLS/lib:$LD_LIBRARY_PATH
+# export PATH=$RISCY_TOOLS/bin:$PATH
+# export LD_LIBRARY_PATH=$RISCY_TOOLS/lib:$LD_LIBRARY_PATH
+
+[[ -z $RISCV ]] && (echo "Setup RISCV tools first"; exit -1)
+export RISCY_TOOLS=$RISCV
+export LD_LIBRARY_PATH=$RISCV/lib:$LD_LIBRARY_PATH

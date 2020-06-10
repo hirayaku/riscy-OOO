@@ -1,30 +1,9 @@
-[submodule "connectal"]
-	path = connectal
-	url = https://github.com/csail-csg/connectal.git
 [submodule "fpgamake"]
 	path = fpgamake
 	url = https://github.com/csail-csg/fpgamake.git
-[submodule "tools/riscv-isa-sim"]
-	path = tools/riscv-isa-sim
-	url = https://github.com/csail-csg/riscv-isa-sim.git
-[submodule "tools/riscv-fesvr"]
-	path = tools/riscv-fesvr
-	url = https://github.com/csail-csg/riscv-fesvr.git
-[submodule "tools/riscv-pk"]
-	path = tools/riscv-pk
-    url = https://github.com/csail-csg/riscv-pk.git
-[submodule "tools/riscv-gnu-toolchain"]
-	path = tools/riscv-gnu-toolchain
-	url = https://github.com/riscv/riscv-gnu-toolchain.git
 [submodule "coherence"]
 	path = coherence
 	url = https://github.com/csail-csg/coherence.git
 [submodule "fpgautils"]
 	path = fpgautils
 	url = https://github.com/csail-csg/fpgautils.git
-[submodule "tools/riscv-linux"]
-	path = tools/riscv-linux
-	url = https://github.com/csail-csg/riscv-linux.git
-[submodule "tools/riscv-tests"]
-	path = tools/riscv-tests
-	url = https://github.com/csail-csg/riscv-tests.git

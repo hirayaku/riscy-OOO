@@ -50,7 +50,9 @@
 # RENAME_DEBUG: true or false
 # BUILD_DIR
 
+ifeq ($(CONNECTALDIR),)
 CONNECTALDIR := $(RISCY_HOME)/connectal
+endif
 
 PROJECTDIR = $(BUILD_DIR)/$(BOARD)
 
@@ -90,6 +92,7 @@ CPPFILES = $(PROC_CPP_DIR)/testproc.cpp \
 
 CONNECTALFLAGS += -D IMPORT_HOSTIF -D XILINX_SYS_CLK --nocache -v
 CONNECTALFLAGS += --bscflags=" -D USER_CLK_PERIOD=$(USER_CLK_PERIOD) "
+CONNECTALFLAGS += -D USER_CLK_PERIOD=$(USER_CLK_PERIOD)
 CONNECTALFLAGS += --bsvpath=$(FPGA_LIB_DIR) --bsvpath=$(PROC_LIB_DIR) --bsvpath=$(PROC_BSV_DIR) --bsvpath=$(COHERENCE_DIR)
 CONNECTALFLAGS += --verilog $(XILINX_IP_DIR)/reset_regs --verilog $(XILINX_IP_DIR)/fpu
 CONNECTALFLAGS += --cflags=" -std=c++0x "
@@ -107,12 +110,15 @@ CONNECTALFLAGS += --cflags=" -DDTC_PATH=\"$(DTC_PATH)\" "
 
 # core size
 CONNECTALFLAGS += --bscflags=" -D CORE_$(CORE_SIZE) "
+CONNECTALFLAGS += -D CORE_$(CORE_SIZE)
 
 # core num
 CONNECTALFLAGS += --bscflags=" -D NUM_CORES=$(CORE_NUM) "
+CONNECTALFLAGS += -D NUM_CORES=$(CORE_NUM)
 
 # cache size
 CONNECTALFLAGS += --bscflags=" -D CACHE_$(CACHE_SIZE) "
+CONNECTALFLAGS += -D CACHE_$(CACHE_SIZE)
 
 # mem model
 ifeq ($(TSO_MM),true)
@@ -240,10 +246,12 @@ endif
 # xilinx FMA latency (originally 4)
 XILINX_FP_FMA_LATENCY = 3
 CONNECTALFLAGS += --bscflags " -D XILINX_FP_FMA_LATENCY=$(XILINX_FP_FMA_LATENCY) "
+CONNECTALFLAGS += -D XILINX_FP_FMA_LATENCY=$(XILINX_FP_FMA_LATENCY)
 
 # xilinx multiplier latency (originally 3)
 XILINX_INT_MUL_LATENCY = 2
 CONNECTALFLAGS += --bscflags " -D XILINX_INT_MUL_LATENCY=$(XILINX_INT_MUL_LATENCY) "
+CONNECTALFLAGS += -D XILINX_INT_MUL_LATENCY=$(XILINX_INT_MUL_LATENCY)
 
 CONNECTALFLAGS += --bscflags=" +RTS -K1G -RTS " --bscflags=" -steps-max-intervals 200 "
 # I use dynamicAssert in bsv
