@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 OUTPUT_DIR ?= .
 
 SIZE ?= SMALL
@@ -6,12 +7,26 @@ TSO_MM ?= false
 STORE_PREFETCH ?= false
 SELF_INV_CACHE ?=
 
+# check RISCY
+ifeq ($(RISCY_HOME),)
+$(error Please set up the RISCY environment first (source setup.sh))
+endif
+
+SYNC_CMD := rsync -r --delete
+
 BUILD_DIR := $(OUTPUT_DIR)/build_$(SIZE)
 VERILOG_DIR := $(OUTPUT_DIR)/verilog_$(SIZE)
+TARGET_DIR := $(OUTPUT_DIR)/design_$(SIZE)
+TARGET_VERILOG_DIR := $(TARGET_DIR)/verilog
+TARGET_BSV_DIR := $(TARGET_DIR)/bsv
 
-EXT_PATH = -p +:$(RISCY_HOME)/procs/lib \
-		   -p +:$(RISCY_HOME)/procs/RV64G_OOO \
-		   -p +:$(RISCY_HOME)/coherence/src
+BSV_PATH := $(RISCY_HOME)/procs/lib \
+		    $(RISCY_HOME)/procs/RV64G_OOO \
+		    $(RISCY_HOME)/coherence/src
+
+TARGET_BSV_PATH := $(foreach path,$(BSV_PATH),$(subst $(RISCY_HOME),$(TARGET_BSV_DIR),$(path)))
+
+OPT_BSV_PATH := $(foreach path,$(BSV_PATH),$(addprefix -p +:,$(path)))
 
 OPT_FLAGS = -unspecified-to X \
 			-opt-undetermined-vals
@@ -61,18 +76,34 @@ COMMAND = bsc -u \
 		  -suppress-warnings S0073:G0024 \
 		  +RTS -K1G -RTS \
 		  -steps-max-intervals 200 \
-		  $(EXT_PATH) \
+		  $(OPT_BSV_PATH) \
 		  $(OPT_FLAGS) \
 		  $(BSV_DEF) \
 		  -verilog CoreTop.bsv
 
-all:
+verilog: 
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(VERILOG_DIR) 
 	echo $(COMMAND) > $(BUILD_DIR)/log.txt
 	eval $(COMMAND) 2>& 1 | tee -a $(BUILD_DIR)/log.txt
 
-clean:
-	rm -rf $(BUILD_DIR) $(VERILOG_DIR)
+pack-design: verilog $(TARGET_BSV_PATH) $(TARGET_VERILOG_DIR)
+	tar zcf design.tar.gz $(TARGET_DIR)
 
+$(TARGET_BSV_PATH): $(TARGET_DIR)/bsv/%: $(RISCY_HOME)/%
+	@echo "$< ==> $@"
+	@[[ -e $< ]] || (echo "some error for $<" && false)
+	@mkdir -p $(dir $@)
+	@$(SYNC_CMD) $</* $@
+
+$(TARGET_VERILOG_DIR): $(VERILOG_DIR)
+	@echo "$< ==> $@"
+	@[[ -e $< ]] || (echo "some error for $<" && false)
+	@mkdir -p $(dir $@)
+	@$(SYNC_CMD) $</* $@
+
+clean:
+	rm -rf $(BUILD_DIR) $(VERILOG_DIR) $(TARGET_DIR) design.tar.gz
+
+.PHONY: clean $(TARGET_BSV_PATH) $(TARGET_VERILOG_DIR)
 
