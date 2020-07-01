@@ -7,3 +7,7 @@
 [submodule "fpgautils"]
 	path = fpgautils
 	url = https://github.com/csail-csg/fpgautils.git
+[submodule "procs/benchmarks/coremark"]
+	path = procs/benchmarks/coremark
+	url = git@github.com:hirayaku/coremark.git
+	branch = riscy-oo

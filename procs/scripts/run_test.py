@@ -27,11 +27,13 @@ import os
 import glob
 import subprocess
 
-test_bin_dir = os.path.join(os.environ['RISCY_TOOLS'],
-                            'riscv64-unknown-elf', 'share', 'riscv-tests')
-
 def extract_asm_name(file_path):
     return os.path.splitext(os.path.basename(file_path))[0]
+
+test_bin_dir = os.path.join(os.environ['RISCY_TOOLS_FESVR'],
+                            'riscv64-unknown-elf',
+                            'share',
+                            'riscv-tests')
 
 # legal test types
 class TestType:
@@ -61,53 +63,71 @@ benchmarks_tests = [
     #'spmv.riscv'
     ]
 
+def run_prog(host_prog, cmd_arg, target_prog, log):
+    if not os.path.isfile(target_prog):
+        print("{} doesn't exist".format(target_prog))
+    else:
+        cmd = ' '.join([host_prog, cmd_arg, '--elf', target_prog, '>', log])
+        print("Run {} using \"{}\"".format(target_prog, cmd))
+        subprocess.check_call(cmd, shell = True) # stop if fail a test
+
 # parse command line args
 parser = argparse.ArgumentParser()
 parser.add_argument('--exe', required = True,
                     metavar = 'UBUNTU_EXE', dest = 'exe')
 parser.add_argument('--rom', required = True,
                     metavar = 'ROM', dest = 'rom')
-parser.add_argument('--test', required = True,
-                    metavar = 'TEST_TYPE', dest = 'test',
-                    choices = [TestType.assembly,
-                               TestType.assembly_fp,
-                               TestType.benchmarks])
 parser.add_argument('--cores', required = True,
                     metavar = 'CORE_NUM', dest = 'core_num')
 parser.add_argument('--outdir', required = False,
                     metavar = 'OUT_DIR', dest = 'out_dir', default = 'out')
 parser.add_argument('--log', action = 'store_true', dest =  'log')
+parser.add_argument('--test', required = False,
+                    metavar = 'TEST_TYPE', dest = 'test',
+                    choices = [TestType.assembly,
+                               TestType.assembly_fp,
+                               TestType.benchmarks],
+                    help = 'run one of built-in tests')
+parser.add_argument('--elf', required = False,
+                    metavar = 'ELF', dest = 'elf',
+                    help = 'run the given elf executable')
 args = parser.parse_args()
 
-# set up the tests to run
-out_dir = os.path.join(os.path.abspath(args.out_dir), args.test)
-test_dir = ''
-test_arg = ' --core-num {} --rom {} '.format(args.core_num, args.rom)
-tests = []
-if args.test == TestType.assembly:
-    test_dir = os.path.join(test_bin_dir, 'isa')
-    test_arg += ' --assembly-tests '
-    tests = assembly_tests
-elif args.test == TestType.assembly_fp:
-    test_dir = os.path.join(test_bin_dir, 'isa')
-    test_arg += ' --assembly-tests '
-    tests = assembly_fp_tests
-elif args.test == TestType.benchmarks:
-    test_dir = os.path.join(test_bin_dir, 'benchmarks')
-    tests = benchmarks_tests
+cmd_arg = ['--core-num {}'.format(args.core_num), '--rom {}'.format(args.rom)]
 
-# create output log folder and go to it
-if not os.path.exists(out_dir):
-    os.makedirs(out_dir)
-os.chdir(out_dir)
+# choose executables to run on the target
+if args.test == None and args.elf == None:
+    print("choose one of built-in tests (TEST) or provide an elf executable (ELF)")
+elif args.elf != None:
+    out_dir = os.path.abspath(args.out_dir)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    os.chdir(out_dir)
+    #  run_prog(args.exe, ' '.join(cmd_arg), args.elf, args.elf+'.log')
+    run_prog(args.exe, ' '.join(cmd_arg), args.elf, '/dev/null')
+else:
+    # set up the tests to run
+    test_dir = ''
+    tests = []
+    if args.test == TestType.assembly:
+        test_dir = os.path.join(test_bin_dir, 'isa')
+        cmd_arg.append('--assembly-tests')
+        tests = assembly_tests
+    elif args.test == TestType.assembly_fp:
+        test_dir = os.path.join(test_bin_dir, 'isa')
+        cmd_arg.append('--assembly-tests')
+        tests = assembly_fp_tests
+    elif args.test == TestType.benchmarks:
+        test_dir = os.path.join(test_bin_dir, 'benchmarks')
+        tests = benchmarks_tests
 
-for t in tests:
-    test_prog = os.path.join(test_dir, t)
-    test_log = 'log.txt' if args.log else '/dev/null'
-    if not os.path.isfile(test_prog):
-        print '[WARNING] {} does not exist'.format(test_prog)
-    else:
-        print 'Run ' + test_prog
-        cmd = args.exe + test_arg + ' --elf ' + test_prog + ' > ' + test_log
-        print 'Command ' + cmd
-        subprocess.check_call(cmd, shell = True) # stop if fail a test
+    out_dir = os.path.join(os.path.abspath(args.out_dir), args.test)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    os.chdir(out_dir)
+
+    for t in tests:
+        test_prog = os.path.join(test_dir, t)
+        test_log = 'log.txt' if args.log else '/dev/null'
+        run_prog(args.exe, ' '.join(cmd_arg), test_prog, test_log)
+
